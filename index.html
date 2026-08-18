@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172b4d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Daily Expense Manager</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f7fb;color:#172033}
+header{background:#172b4d;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.8;font-size:13px}
+.wrap{max-width:1100px;margin:auto;padding:14px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.card{background:#fff;border-radius:14px;padding:15px;box-shadow:0 2px 10px #0000000d}.label{font-size:12px;color:#68748a}.value{font-size:21px;font-weight:700;margin-top:4px}
+.panel{background:#fff;border-radius:14px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px #0000000d}.panel h2{font-size:17px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}label{font-size:12px;color:#536176;font-weight:600}input,select,button{width:100%;padding:11px;border:1px solid #d8deea;border-radius:9px;font:inherit;background:#fff}input:focus,select:focus{outline:2px solid #bfd2ff;border-color:#6d94ee}
+.actions{display:flex;gap:8px;margin-top:12px}.btn{border:0;background:#2463eb;color:white;font-weight:700;cursor:pointer}.btn.secondary{background:#eef2f8;color:#26354d}.btn.danger{background:#d9363e}.btn.green{background:#15803d}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{text-align:left;padding:10px;border-bottom:1px solid #edf0f5;font-size:13px}th{background:#f8fafc;color:#526074}.amount{font-weight:700;color:#c0392b}
+.filters{display:grid;grid-template-columns:1.1fr 1.1fr 1fr auto;gap:8px;align-items:end}.empty{text-align:center;color:#718096;padding:25px}
+@media print{
+  header{position:static;background:#fff;color:#000;border-bottom:2px solid #222}
+  .wrap{max-width:none;padding:0}
+  .panel{box-shadow:none;border:0}
+  .wrap > .panel:first-child,
+  .wrap > .cards,
+  .wrap > .panel:nth-of-type(2),
+  .wrap > .panel:nth-of-type(3),
+  .wrap > .panel:nth-of-type(4){display:none!important}
+  #reportSummary{display:block!important;border-bottom:2px solid #222;margin-bottom:10px}
+  #reportSummary h2{font-size:18px}
+  .table-wrap{overflow:visible}
+  table{min-width:0;width:100%;font-size:10px}
+  th,td{padding:5px}
+  th:last-child,td:last-child{display:none}
+  #empty{display:none!important}
+}
+@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters button{grid-column:span 2}.actions{flex-wrap:wrap}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>💰 Daily Expense Manager</h1><p>Daily kharch entry, search, report aur CSV export</p></header>
+<div class="wrap">
+  <div class="panel" style="padding:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="officeDashBtn" type="button">🏢 Office Dashboard</button>
+      <button class="btn secondary" id="personalDashBtn" type="button">👤 Personal Dashboard</button>
+      <button class="btn secondary" id="allDashBtn" type="button">📊 All</button>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="label" id="card1Label">Office Balance / Dues</div><div class="value" id="officeBalance">₹0</div></div>
+    <div class="card"><div class="label" id="card2Label">Office Received</div><div class="value" id="officeReceived">₹0</div></div>
+    <div class="card"><div class="label" id="card3Label">Office Expense</div><div class="value" id="officeExpense">₹0</div></div>
+    <div class="card"><div class="label" id="card4Label">Personal Expense</div><div class="value" id="personalExpense">₹0</div></div>
+  </div>
+    <div class="card"><div class="label">Office Balance / Dues</div><div class="value" id="officeBalance">₹0</div></div>
+    <div class="card"><div class="label">Office Received</div><div class="value" id="officeReceived">₹0</div></div>
+    <div class="card"><div class="label">Office Expense</div><div class="value" id="officeExpense">₹0</div></div>
+    <div class="card"><div class="label">Personal Expense</div><div class="value" id="personalExpense">₹0</div></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="formTitle">➕ New Expense</h2>
+    <form id="expenseForm">
+      <input type="hidden" id="editId">
+      <div class="grid">
+        <div><label>Account</label><select id="account" required><option value="office">Office Expense</option><option value="personal">Personal Expense</option></select></div>
+        <div><label>Date</label><input id="date" type="date" required></div>
+        <div id="entryTypeBox"><label>Entry Type</label><select id="entryType"><option value="expense">Expense</option><option value="received">Office Payment Received</option></select></div>
+        <div><label>Category</label>
+          <select id="category" required>
+            <option value="">Select</option><option>Auto</option><option>Bus</option><option>Train</option>
+            <option>Luggage</option><option>Fooding</option><option>Item Purchase</option><option>Other</option>
+          </select>
+        </div>
+        <div><label>Amount (₹)</label><input id="amount" type="number" min="0" step="0.01" placeholder="0" required></div>
+        <div><label>Payment Mode</label>
+          <select id="payment"><option>Cash</option><option>UPI</option><option>Card</option><option>Bank Transfer</option><option>Other</option></select>
+        </div>
+        <div id="travelBox"><label>From Location</label><input id="fromPlace" placeholder="Kahan se"></div>
+        <div id="toBox"><label>To Location</label><input id="toPlace" placeholder="Kahan tak"></div>
+        <div id="itemBox"><label>Item Name <span style="font-weight:400">(Item Purchase ke liye)</span></label><input id="itemName" placeholder="Jaise: Pen, Copy, Cable"></div>
+        <div><label>Person / Shop</label><input id="person" placeholder="Kis ko diya / kahan kharch hua"></div>
+        <div><label>Note</label><input id="note" placeholder="Short description"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" id="saveBtn">Save Expense</button>
+        <button class="btn secondary" type="button" id="cancelBtn" style="display:none">Cancel Edit</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>🔎 Expense Report & Dues</h2>
+    <div class="filters">
+      <div><label>From</label><input id="from" type="date"></div>
+      <div><label>To</label><input id="to" type="date"></div>
+      <div><label>Account</label><select id="filterAccount"><option value="">All Accounts</option><option value="office">Office Expense</option><option value="personal">Personal Expense</option></select></div>
+      <div><label>Category</label><select id="filterCat"><option value="">All Categories</option></select></div>
+      <button class="btn secondary" id="clearFilters">Clear Filters</button>
+    </div>
+    <div class="actions">
+      <button class="btn green" id="exportBtn">⬇ Export CSV</button>
+      <button class="btn" id="printBtn">📄 Download / Print Report</button>
+      <button class="btn danger" id="clearAllBtn">Delete All Data</button>
+    </div>
+  </div>
+
+  <div class="panel" id="reportSummary">
+    <h2>📌 Report Summary</h2>
+    <div id="summaryText" style="line-height:1.8"></div>
+  </div>
+
+  <div class="panel">
+    <div class="table-wrap">
+      <table><thead><tr><th>Date</th><th>Account</th><th>Type</th><th>Category</th><th>Route / Item</th><th>Amount</th><th>Mode</th><th>Person/Shop</th><th>Note</th><th>Action</th></tr></thead>
+      <tbody id="tbody"></tbody></table>
+      <div class="empty" id="empty">Abhi koi expense entry nahi hai.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY="daily_expense_manager_v1";
+let expenses=JSON.parse(localStorage.getItem(KEY)||"[]");
+const $=id=>document.getElementById(id);
+const todayStr=()=>new Date().toISOString().slice(0,10);
+$("date").value=todayStr();
+function toggleItem(){
+  const c=$("category").value;
+  const received=$("entryType").value==="received";
+  $("category").disabled=received;
+  $("itemBox").style.display=!received&&c==="Item Purchase"?"block":"none";
+  const travel=["Auto","Bus","Train","Luggage"].includes(c);
+  $("travelBox").style.display=travel?"block":"none";
+  $("toBox").style.display=travel?"block":"none";
+}
+$("category").addEventListener("change",toggleItem);
+$("entryType").addEventListener("change",toggleItem);
+$("account").addEventListener("change",()=>{
+  if($("account").value==="personal") $("entryType").value="expense";
+  $("entryType").disabled=$("account").value==="personal";
+  toggleItem();
+});
+toggleItem();
+
+function money(n){return "₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function save(){localStorage.setItem(KEY,JSON.stringify(expenses));render()}
+let dashboard="office";
+function filtered(){
+  const f=$("from").value,t=$("to").value,c=$("filterCat").value,a=$("filterAccount").value;
+  const accountFilter = a || (dashboard==="all" ? "" : dashboard);
+  return expenses.filter(x=>(!f||x.date>=f)&&(!t||x.date<=t)&&(!c||x.category===c)&&(!accountFilter||x.account===accountFilter))
+    .sort((a,b)=>b.date.localeCompare(a.date)||b.created-b.created);
+}
+function render(){
+  const list=filtered(), all=expenses;
+  const officeReceived=all.filter(x=>x.account==="office"&&x.entryType==="received").reduce((s,x)=>s+Number(x.amount),0);
+  const officeExpense=all.filter(x=>x.account==="office"&&x.entryType!=="received").reduce((s,x)=>s+Number(x.amount),0);
+  const personalExpense=all.filter(x=>x.account==="personal"&&x.entryType!=="received").reduce((s,x)=>s+Number(x.amount),0);
+  if(dashboard==="office"){
+    $("card1Label").textContent="Office Balance / Dues"; $("officeBalance").textContent=money(officeReceived-officeExpense);
+    $("card2Label").textContent="Office Payment Received"; $("officeReceived").textContent=money(officeReceived);
+    $("card3Label").textContent="Office Total Expense"; $("officeExpense").textContent=money(officeExpense);
+    $("card4Label").textContent="Office Entries"; $("personalExpense").textContent=all.filter(x=>x.account==="office").length;
+  } else if(dashboard==="personal"){
+    $("card1Label").textContent="Personal Total Expense"; $("officeBalance").textContent=money(personalExpense);
+    $("card2Label").textContent="Personal Entries"; $("officeReceived").textContent=all.filter(x=>x.account==="personal").length;
+    $("card3Label").textContent="Personal Travel"; $("officeExpense").textContent=money(all.filter(x=>x.account==="personal"&&["Auto","Bus","Train","Luggage"].includes(x.category)).reduce((s,x)=>s+Number(x.amount),0));
+    $("card4Label").textContent="Personal Item Purchase"; $("personalExpense").textContent=money(all.filter(x=>x.account==="personal"&&x.category==="Item Purchase").reduce((s,x)=>s+Number(x.amount),0));
+  } else {
+    $("card1Label").textContent="Office Balance / Dues"; $("officeBalance").textContent=money(officeReceived-officeExpense);
+    $("card2Label").textContent="Office Expense"; $("officeReceived").textContent=money(officeExpense);
+    $("card3Label").textContent="Personal Expense"; $("officeExpense").textContent=money(personalExpense);
+    $("card4Label").textContent="Total Expense"; $("personalExpense").textContent=money(officeExpense+personalExpense);
+  }
+  const cats=[...new Set(all.map(x=>x.category))].sort();
+  const old=$("filterCat").value;
+  $("filterCat").innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  if(cats.includes(old))$("filterCat").value=old;
+  $("tbody").innerHTML=list.map(x=>`<tr>
+    <td>${esc(x.date)}</td><td>${x.account==="office"?"Office":"Personal"}</td><td>${x.entryType==="received"?"💵 Received":"💸 Expense"}</td><td>${esc(x.category||"Office Payment")}</td>
+    <td>${x.fromPlace||x.toPlace?"📍 "+esc(x.fromPlace||"-")+" → "+esc(x.toPlace||"-"):""}${x.category==="Item Purchase"&&x.itemName?"🛒 "+esc(x.itemName):""}${!x.fromPlace&&!x.toPlace&&x.category!=="Item Purchase"?"-":""}</td>
+    <td class="amount">${money(x.amount)}</td>
+    <td>${esc(x.payment)}</td><td>${esc(x.person||"-")}</td><td>${esc(x.note||"-")}</td>
+    <td><button class="btn secondary" onclick="editExpense('${x.id}')">Edit</button>
+    <button class="btn danger" onclick="deleteExpense('${x.id}')">Delete</button></td></tr>`).join("");
+  $("empty").style.display=list.length?"none":"block";
+  const reportTotal=list.filter(x=>x.entryType!=="received").reduce((a,x)=>a+Number(x.amount||0),0);
+  $("summaryText").innerHTML="<b>TOTAL KHARCH:</b> "+money(reportTotal);
+
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+$("expenseForm").onsubmit=e=>{
+ e.preventDefault();
+ const obj={id:$("editId").value||Date.now().toString(),account:$("account").value,entryType:$("entryType").value,date:$("date").value,category:$("category").value,
+ amount:Number($("amount").value),payment:$("payment").value,itemName:$("itemName").value.trim(),
+ fromPlace:$("fromPlace").value.trim(),toPlace:$("toPlace").value.trim(),person:$("person").value.trim(),note:$("note").value.trim(),created:Date.now()};
+ const i=expenses.findIndex(x=>x.id===obj.id);
+ if(i>=0)expenses[i]={...expenses[i],...obj}; else expenses.push(obj);
+ save(); resetForm();
+};
+function resetForm(){$("expenseForm").reset();$("date").value=todayStr();$("account").value="office";$("entryType").value="expense";$("editId").value="";$("itemName").value="";$("fromPlace").value="";$("toPlace").value="";$("formTitle").textContent="➕ New Expense";toggleItem();$("saveBtn").textContent="Save Expense";$("cancelBtn").style.display="none"}
+window.editExpense=id=>{
+ const x=expenses.find(a=>a.id===id);if(!x)return;
+ $("editId").value=x.id;$("account").value=x.account||"office";$("entryType").value=x.entryType||"expense";$("date").value=x.date;$("category").value=x.category||"";$("amount").value=x.amount;
+ $("payment").value=x.payment;$("itemName").value=x.itemName||"";$("fromPlace").value=x.fromPlace||"";$("toPlace").value=x.toPlace||"";$("person").value=x.person||"";$("note").value=x.note||"";toggleItem();
+ $("formTitle").textContent="✏️ Edit Expense";$("saveBtn").textContent="Update Expense";$("cancelBtn").style.display="block";scrollTo({top:0,behavior:"smooth"});
+};
+window.deleteExpense=id=>{if(confirm("Is expense ko delete karna hai?")){expenses=expenses.filter(x=>x.id!==id);save()}};
+$("cancelBtn").onclick=resetForm;
+function setDashboard(name){
+  dashboard=name;
+  $("filterAccount").value=name==="all"?"":name;
+  $("officeDashBtn").className=name==="office"?"btn":"btn secondary";
+  $("personalDashBtn").className=name==="personal"?"btn":"btn secondary";
+  $("allDashBtn").className=name==="all"?"btn":"btn secondary";
+  render();
+}
+$("officeDashBtn").onclick=()=>setDashboard("office");
+$("personalDashBtn").onclick=()=>setDashboard("personal");
+$("allDashBtn").onclick=()=>setDashboard("all");
+["from","to","filterCat","filterAccount"].forEach(id=>$(id).oninput=()=>{
+  if(id==="filterAccount" && $("filterAccount").value) dashboard=$("filterAccount").value;
+  render();
+});
+$("clearFilters").onclick=()=>{$("from").value="";$("to").value="";$("filterCat").value="";$("filterAccount").value="";render()};
+$("clearAllBtn").onclick=()=>{if(expenses.length&&confirm("Saari entries permanently delete karni hain?")){expenses=[];save()}};
+$("exportBtn").onclick=()=>{
+  const account = dashboard==="office" ? "office" : dashboard==="personal" ? "personal" : "";
+  const list=expenses.filter(x=>{
+    if(account && x.account!==account) return false;
+    const f=$("from").value,t=$("to").value,c=$("filterCat").value;
+    return (!f||x.date>=f)&&(!t||x.date<=t)&&(!c||x.category===c)&&x.entryType!=="received";
+  }).sort((a,b)=>b.date.localeCompare(a.date)||b.created-b.created);
+  if(!list.length){alert("Is report me koi expense entry nahi hai.");return}
+
+  const total=list.reduce((a,x)=>a+Number(x.amount||0),0);
+  const title=dashboard==="office"?"OFFICE EXPENSE REPORT":dashboard==="personal"?"PERSONAL EXPENSE REPORT":"EXPENSE REPORT";
+  const rows=[
+    [title],
+    [],
+    ["TOTAL KHARCH",total],
+    [],
+    ["Date","Category","From","To","Item Name","Amount","Payment Mode","Person/Shop","Note"],
+    ...list.map(x=>[x.date,x.category||"",x.fromPlace||"",x.toPlace||"",x.itemName||"",x.amount,x.payment,x.person||"",x.note||""])
+  ];
+  const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=(dashboard==="office"?"office":dashboard==="personal"?"personal":"all")+"-expense-report-"+todayStr()+".csv";
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$("printBtn").onclick=()=>{
+  const list=filtered();
+  if(!list.length){alert("Report download karne ke liye koi entry nahi hai.");return}
+  window.print();
+};
+render();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body></html>
